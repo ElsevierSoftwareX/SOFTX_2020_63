@@ -1,0 +1,8 @@
+<br>
+<form role="form" class="form" id="connection">
+    <input id="ip" type="text" placeholder="IP adress" data-clear-btn='true'>
+	<script type="text/javascript"> 
+	document.getElementById("ip").setAttribute('value',((localStorage.getItem("ip") != null) ? localStorage.getItem("ip") : ''));
+	</script>
+    <button class="btn btn-positive btn-block" type="submit">Connect</button>
+</form>
