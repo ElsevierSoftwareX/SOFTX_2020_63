@@ -1,8 +1,61 @@
-<div class="bar bar-standard bar-header-secondary pad" id="header">
+<div id="popover" class="popover">
+    <ul class="table-view">
+        <li class="table-view-cell"><a id="list">List</a></li>
+        <li class="table-view-cell"><a id="information">Information</a></li>
+        <li class="table-view-cell"><a id="disconnect">Quit</a></li>
+    </ul>
 </div>
 
-<div id="paper">
+<header class="bar bar-nav">
+    <a href="#popover">
+        <span class="icon icon-more-vertical pull-right"></span>
+    </a>
+    <a id="back_list" class="icon icon-left-nav pull-left"></a>
+</header>
+
+<div id="info" class="modal">
 </div>
 
-<div class="bar bar-standard bar-footer pad" id="footer">
+<div class="bar bar-standard bar-header-secondary" id="head2">
+    <div class="segmented-control">
+        <a class="control-item active" href="#diagram">
+            Diagram
+        </a>
+        <a class="control-item" href="#description">
+            Description
+        </a>
+        <a class="control-item" href="#simulation">
+            Simulate
+        </a>
+    </div>
+</div>
+
+<div class="content">
+    <div class="card">
+        <span id="diagram" class="control-content active">
+            <div id="paper"></div>
+        </span>
+        <span id="description" class="control-content">
+        </span>
+        <span id="simulation" class="control-content">
+        
+            <form class="input-group">
+                <div class="input-row">
+                    <label>Time</label>
+                    <input id="time" type="text" value="10" maxlength="4">
+                </div>
+            </form>
+            <ul class="table-view">
+                <li class="table-view-cell">
+                    No time limit
+                    <div id ="ntl" class="toggle">
+                        <div class="toggle-handle"></div>
+                    </div>
+                </li>
+            </ul>
+             
+            <button id="simulate" class="btn btn-primary btn-block">Simulate</button>
+            
+        </span>
+    </div>
 </div>

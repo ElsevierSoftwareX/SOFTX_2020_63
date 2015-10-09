@@ -1,5 +1,39 @@
 var key = "";
-// var address = "http://lcapocchi.pythonanywhere.com/";
+
+function isValidURL(url) {
+    var encodedURL = encodeURIComponent(url);
+    var isValid = false;
+
+    $.ajax({
+        url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%22" + encodedURL + "%22&format=json",
+        type: "get",
+        async: false,
+        dataType: "json",
+        success: function (data) {
+            isValid = data.query.results != null;
+        },
+        error: function () {
+            isValid = false;
+        }
+    });
+
+    return isValid;
+};
+
+function isNumeric(obj) {
+    return obj - parseFloat(obj) >= 0;
+};
+
+function alert_dial(info, redirect) {
+    $("<header class=\"bar bar-nav\">\
+                    <a class=\"icon icon-close pull-right\" onClick=\"window.location='index.html?view=" + redirect+ "'\"></a>\
+                    <h1 class=\"title\">Information</h1>\
+                    </header>\
+                    <div class=\"content\">\
+                    <p class=\"content-padded\">"+ info + "</p>\
+                    </div>").appendTo("#info");
+    $("#info").addClass("active");
+};
 
 var app = {
     // Application Constructor
@@ -34,7 +68,6 @@ var app = {
 };
 
 app.initialize();
-
 
 function createCORSRequest(method, url) {
     var xhr = new XMLHttpRequest();
@@ -72,6 +105,7 @@ function getParameterByName(param)
 }  
 
 function renderView(controller) {
+   
     if (!controller) {
         controller = getParameterByName("view");
     }
@@ -81,24 +115,21 @@ function renderView(controller) {
         renderView("home");
     }
 };
+
 function session_reg(ip) {
     if (sessionStorage !== null) {
         sessionStorage.setItem('ip', ip);
-        // connect();
-        if (is_connected()) {
-            alert("Well connected!");
-        }
+        connect();
+        //if (is_connected()) {
+        //    alert("Well connected!");
+        //}
     } else {
         alert('Session storage not supported!');
     }
 };
 
 function is_connected() {
-    is_connected = false;
-    if (sessionStorage.getItem('ip') !== null)  {
-        is_connected = true;
-    }
-    return is_connected;
+    return sessionStorage.getItem('ip') !== null;
 };
 
 function session_get() {
@@ -110,27 +141,14 @@ function session_get() {
     }
 };
 
-function list_dsp(data){
-    var items = [];
-    // $.each( data, function( key, val ) {
-        // items.push(
-        //     "<li class='table-view-cell media'>\
-        //         <a class='navigate-right' onClick=\"document.location.href='index.html?dsp.html?view=dsp&dsp="+key+"'\" data-transition='slide-in'>\
-        //             <img class='media-object pull-left' src='http://placehold.it/42x42'>\
-        //             <div class='media-body'>\
-        //             "+key+"\
-        //             <p>"+val[1].description+"</p>\
-        //             </div>\
-        //         </a>\
-        //     </li>" );
-    // });
-    
-    $.each(data['content'], function(key, val){
+function list_param(data) {
+
+    $.each(data['content'], function (key, val) {
         items.push(
             "<li class='table-view-cell media'>\
-                <a class='navigate-right' onClick=\"document.location.href='index.html?dsp.html?view=dsp&dsp="+key+"'\" data-transition='slide-in'>\
+                <a class='navigate-right' onClick=\"document.location.href='index.html?view=dsp&name="+ key + "'\" data-transition='slide-in'>\
                     <div class='media-body'>\
-                    "+key+"\
+                    "+ key + "\
                     </div>\
                 </a>\
             </li>" );
@@ -138,13 +156,72 @@ function list_dsp(data){
 
     $("<ul/>", {
         "class": "table-view",
-        html: items.join( "" )
-    }).appendTo( "#content-padded" );
+        html: items.join("")
+    }).appendTo("#content-padded");
+}
+
+function list_dsp(data) {
+
+        var items = [];
+        // display filename of yaml file with last modified date and size
+        $.each(data['content'], function(filename, info){
+            items.push(
+                "<li class='table-view-cell media'>\
+                <a class='navigate-right' onClick=\"document.location.href='index.html?view=dsp&name="+filename+"'\" data-transition='slide-in'>\
+                    <span class=\"media-object pull-left icon icon-pages\"></span>\
+                    <div class='media-body'>\
+                    " + filename.replace(/(.*)\.[^.]+$/, "$1") +
+                    "<p>" + info["last modified"] + "<br />" + info["size"] + "</p>\
+                    </div>\
+                </a>\
+            </li>" );
+        });
+
+        $("<ul/>", {
+            "class": "table-view",
+            html: items.join("")
+        }).appendTo("#content-padded");
 };
 
-function parse_dsp(data, dsp){
+function parse_result(data) {
 
-    $("#header").html("<a class='navigate-left' onClick=\"window.location='index.html?view=listing_dsp'\" data-transition='slide-out'><h3 class='center'>"+dsp+"</h3></a>");
+    var filename = data['file'].replace(/.*\/|\.[^.]*$/g, '')+'.yaml';
+    var time = data['time'];
+
+    var items = [];
+    $.each(data, function (key, val) {
+        if (key == 'time' || key == 'date' || key == 'duration') {
+            items.push(
+                "<li class=\"table-view-cell\">"+key+"<span class=\"badge\">" + val + "</span></li>"
+            );
+        } else if (key == 'output'){
+            items.push(
+                "<li class=\"table-view-divider\">Generated files</li>"
+            );
+            // list output .dat files
+            $.each(val, function (index, v) {
+                items.push(
+                    "<li class='table-view-cell media'>\
+                    <a class='navigate-right' onClick=\"document.location.href='index.html?view=plot&name="+v['name']+"&time="+time+"&filename="+filename+"'\" data-transition='slide-in'>\
+                        <div class='media-body'>\
+                        <p>" + v['name']+"</p>\
+                        </div>\
+                    </a>\
+                </li>" 
+                );
+            });
+        } 
+    });
+
+    $("<br /><p style='text-align: center;'>Simulation succeffuly completed!</p>").insertBefore('.card');
+
+    $("<ul/>", {
+        "class": "table-view",
+        html: items.join("")
+    }).appendTo("#result");
+}
+
+function parse_dsp(data, dsp){
 
     var obj = data[dsp];
     // var atomic_models = obj[0].models[0].atomic_models;
@@ -153,21 +230,51 @@ function parse_dsp(data, dsp){
     var cells = obj[0];
     var description = obj[1].description;
 
-    $("#footer").html(
-        "<button id='simulate' class='btn btn-block'>Simulate</button>\
-        <br>\
-        <h4>Description</h4>\
-        <p>"+description+"</p>"
-        );
-
     draw(cells);
+
+    // add description Segmented control
+    $("<p>" + description + "</p>").appendTo("#description");
+
 };
+
+function parse_prop(data, model, dsp) {
+
+    var obj = data[dsp];
+
+    for (item in obj[0].cells) {
+        var elem = obj[0].cells[item];
+        var typ = elem.type;
+        
+        if (typ == 'devs.Atomic' && elem.id == model) {
+            var prop = elem.prop.data;
+            var items = [];
+
+            $.each(prop, function (key, val) {
+                items.push(
+                    "<div class=\"input-row\">" +
+                    "<label>" + key + "</label>" +
+                    "<input name=\"" + key + "\" id=\"" + key + "\" type=\"text\" value=\"" + val + "\" />" +
+                    "</div>");
+            });
+
+            $("<form/>", {
+                "class": "input-group",
+                html: items.join("")
+            }).appendTo("#param");
+        };
+    };
+};
+
+function plot(filename) {
+    $("<h1 class=\"title\">" + filename + "</h1>").appendTo('header');
+    console.log(filename);
+}
 
 function discon(){
     // disconnect();
     delete sessionStorage.ip;
     sessionStorage.clear();
-    alert('Disconnected!');
+    //alert('Disconnected!');
 };
 
 function draw(json) {
@@ -175,11 +282,21 @@ function draw(json) {
 
     var paper = new joint.dia.Paper({
         el: $('#paper'),
-        width: $(document).width()-20,
-        height: $(document).height()-($("#head").height()+$("#header").height()+$("#footer").height()),
+        width: $(document).width()-30,
+        height: $(document).height()-($("#head2").height()+$("header").height()+50),
         gridSize: 1,
         model: graph,
         perpendicularLinks: true
+    });
+
+    // double click on model
+    paper.on('cell:pointerdblclick',
+    function (cellView, evt, x, y) {
+        var dsp = $('#dsp').text();
+        var m = cellView.model
+        //var data = m.attributes.prop.data;
+
+        window.location = "index.html?view=model_param&model=" + m.id + "&dsp=" + dsp+'.yaml';
     });
 
     graph.fromJSON(json);
@@ -187,7 +304,6 @@ function draw(json) {
     paper.setOrigin(paper.options.origin["x"], 50);
     // console.log(paper.options.origin);
 }
-
 
 function stub(d) {
     console.log(d);
@@ -219,105 +335,247 @@ function isConnected() {
     window.tlantic.plugins.socket.isConnected(key, stub, stub);
 };
 
+function simulate(filename, time) {
 
-function simulate(dsp_name) {
-    var url = sessionStorage.ip+"simulate?name="+dsp_name+"&time=10";
-    var xhr = createCORSRequest('GET', url);
-    if (!xhr) {
-        throw new Error('CORS not supported');
-    }
+    var url = sessionStorage.ip + "simulate?name=" + filename + "&time=" + time;
 
-    xhr.onload = function() {
-        var responseText = xhr.responseText;
-        $("#header").html("<a class='navigate-left' onClick=\"window.location='index.html?view=dsp&dsp="+dsp_name+"'\" data-transition='slide-out'><h3 class='center'>Simulation Result</h3></a>");
-        console.log(responseText);
-        // process the response.
-        $("#result").html(responseText);
-    };
+    var jqxhr = $.getJSON(url, function () {
+                    console.log("success");
+                })
+                .done(function (data) {
+                    parse_result(data);
+                })
+                .fail(function () {
+                    alert_dia("Error during simulation. Please check the model!", "dsp&name=" + filename);
+                });
 
-    xhr.onerror = function(err) {
-        console.log('There was an error!');
-    };
+//    var jqxhr = $.ajax(url)
+//    .done(function (html) {
+//        console.log(data);
+//        $("#result").html(data);
+//    })
+//    .fail(function () {
+//        alert_dia("Error during simulation. Please check the model!", "dsp&name=" + filename);
+//    });
 
-    xhr.send();
 };
-
-
 
 $(document).ready(function(){
 
     // $.ajaxSetup({ cache: false });
 
-    $('body').on('click', 'a', renderView());
-
+    //$('body').on('click', 'a', renderView());
+   
     if (is_connected()) {
 
         session_get();
+        
+        //discon();
 
-        $("<span id='listing_dsp' class='icon icon-list pull-left'></span>").appendTo("#head");
-        $(document).on('click', '#listing_dsp', (function(){
-            window.location = "index.html?view=listing_dsp";
-        }));
-
-        $('#con').html("<button class='btn btn-link btn-nav pull-right' id='disconnect' type='submit'>Disconnect <span class='icon icon-gear'></span></button>");
-        $("body").on('click', '#disconnect', function(event){
+        $("body").on('click', '#disconnect', function (event) {
             discon();
+            window.location = "index.html";
+        });
+
+        $("body").on('click', '#list', function (event) {
+            window.location = "index.html?view=listing_dsp";
+        });
+
+        $("body").on('click', '#information', function (event) {
+            alert_dial("DEVSimPy-mob is a mobile app which aims to simulate DEVSimPy models from mobile environement.", this.location);
         });
 
         var controller = getParameterByName("view");
-        if (controller !== "listing_dsp" && controller !== "dsp") {
-            renderView();
-        } else if (controller == "listing_dsp") {
-            renderView("listing_dsp");
-            $.getJSON(sessionStorage.ip+"yaml?all")
-                .done(function(data){
+
+        console.log(controller);
+
+        if (controller == "listing_dsp") {
+            renderView(controller);
+           
+            // define function to populate the list of yaml file stored in the server
+            var populate = function () {
+                $.getJSON(sessionStorage.ip + "yaml?filenames")
+                .done(function (data) {
                     list_dsp(data);
                 })
-                .fail(function( jqxhr, textStatus, error ) {
+                .fail(function (jqxhr, textStatus, error) {
                     var err = textStatus + ", " + error;
-                    console.log( "Request Failed: " + err );
+                    console.log("Request Failed: " + err);
+                });
+            };
+
+            $("body").on('click', '#refresh', function (event) {
+                // clear before populate the list
+                $("#content-padded").empty();
+                populate();
             });
+
+            populate();
+
         } else if (controller == "dsp") {
             renderView(controller);
-            var dsp = getParameterByName("dsp");
 
-            $.getJSON(sessionStorage.ip+"json?name="+dsp)
-                .done(function(data){
-                    parse_dsp(data, dsp);
+            var name = getParameterByName("name");
+           
+            $("body").on('click', '#back_list', function (event) {
+                window.location = "index.html?view=listing_dsp";
+            });
+
+            var jqxhr = $.getJSON(sessionStorage.ip+"json?name="+name)
+                .done(function (data) {
+                    //ActivityIndicator.show("sdc");
+                    parse_dsp(data, name);
+                    //ActivityIndicator.hide();
                 })
                 .fail(function( jqxhr, textStatus, error ) {
                         var err = textStatus + ", " + error;
                         console.log( "Request Failed: " + err );
             });
 
-            $('body').on('click', '#simulate', function(event){
-                renderView("result");
-                simulate(dsp);
+            // only when model has been correctly loaded 
+            jqxhr.complete(function () {
+               $("<h1 id=\"dsp\" class=\"title\">" + name.replace(/(.*)\.[^.]+$/, "$1") + "</h1>").appendTo('header');
+
+               $('body').on('click', '#simulate', function (event) {
+                   var time = $('#time').val();
+
+                   if (isNumeric(time)) {
+                       window.location = "index.html?view=result&name="+name+"&time="+time;
+                   } else {
+                       alert_dial("Time must be digit value.", "dsp&name=" + name);
+                   }
+               });
             });
+
+        } else if (controller == "model_param") {
+            renderView(controller);
+
+            var dsp = getParameterByName("dsp");
+            var model = getParameterByName("model");
+          
+            $("body").on('click', '#back_model', function (event) {
+                window.location = "index.html?view=dsp&name=" + dsp;
+            });
+
+            $("body").on('click', '#save_yaml', function (event) {
+                var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
+                .done(function (data) {
+                    
+                    var cells_tab = data[dsp][0]['cells'];
+                    var i;
+                    for (i = 1; i < cells_tab.length; ++i) {
+                        if (cells_tab[i]['id'] == model) {
+                            var prop_obj = cells_tab[i]['prop']['data'];
+                            new_json_part = { 'filename': dsp, 'model':model, 'args': {} }
+                            for (name in prop_obj) {
+                                // get input value from form of the mobile app
+                                var new_val = $("#" + name).val();
+
+                                new_json_part['args'][name] = new_val
+
+                                // update val into data object
+                                //data[dsp][0]['cells'][i]['prop']['data'][name] = new_val;
+                            }
+                        }
+                    }
+                    //console.log(new_json_part);
+                    $.ajax
+                    ({
+                        type: 'POST',
+                        url: 'http://lcapocchi.pythonanywhere.com/yaml/save',
+                        data: JSON.stringify(new_json_part),
+                        contentType: "application/json; charset=utf-8",
+                        dataType: 'json',
+                        success: function (data) {
+                            //$.each(data, function (index, value) {
+ //                           //    alert("index: " + index + " , value: " + value);
+                            //                           //});
+                            //console.log(data);
+                            alert_dial("Modification have been applied!", "dsp&name=" + dsp);
+                        }
+                    });
+
+                })
+                .fail(function (jqxhr, textStatus, error) {
+                    var err = textStatus + ", " + error;
+                    console.log("Request Failed: " + err);
+                });
+
+            });
+
+            var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
+                .done(function (data) {
+                    parse_prop(data, model, dsp); 
+                })
+                .fail(function (jqxhr, textStatus, error) {
+                    var err = textStatus + ", " + error;
+                    console.log("Request Failed: " + err);
+                });
+
+            // only when model has been correctly loaded 
+            jqxhr.complete(function () {
+                $("<h1 id='dsp' class=\"title\">" + model + "</h1>").appendTo('header');
+            });
+
+        } else if (controller == "plot") {
+            renderView(controller);
+
+            var filename = getParameterByName("filename");
+            var time = getParameterByName("time");
+           
+            $("body").on('click', '#back_result', function (event) {
+                window.location = "index.html?view=result&name="+filename+"&time="+time;
+            });
+
+            // performing plot
+            plot(filename);
+
+        } else if (controller == "result") {
+            renderView(controller);
+
+            var name = getParameterByName("name");
+            var time = getParameterByName("time");
+
+            $("body").on('click', '#back_sim', function (event) {
+                  window.location = "index.html?view=dsp&name=" + name;
+            });
+
+            // performing simulation
+            simulate(name, time);
+    
+        } else {
+            window.location = "index.html?view=listing_dsp";            
         }
         
-        document.addEventListener(window.tlantic.plugins.socket.receiveHookName, function (ev) {
-            console.log('Data has been received: ', JSON.stringify(ev.metadata));
-            alert(ev.metadata.data);
-            var p = JSON.parse(ev.metadata.data);
-                console.log(p);
-            });
+        //document.addEventListener(window.tlantic.plugins.socket.receiveHookName, function (ev) {
+        //    console.log('Data has been received: ', JSON.stringify(ev.metadata));
+        //    alert(ev.metadata.data);
+        //    var p = JSON.parse(ev.metadata.data);
+        //        console.log(p);
+        //    });
 
     } else {
 
-        $('#con').html("<button class='btn btn-link btn-nav pull-right' name='view' value='connect' type='submit'>Connect <span class='icon icon-gear'></span></button>");
         renderView();
 
-        $('body').on('submit', '#connection', function(event){
-            var address = 'http://'+$("#ip").val()+'/';
-            if (address == '') {
-                alert("Please enter the IP adress!");
-                event.preventDefault();
+        $('body').on('submit', '#connection', function (event) {
+            var ip = $("#ip").val();
+            var username = $("#username").val();
+            var password = $("#password").val();
+
+            // devsimpy rest server need authentication ? 
+            if (username != "" && password != ""){
+                var address = 'http://'+ username + ":" + password +"@"+ ip + '/';
             } else {
+                var address = 'http://' + ip + '/';
+            }
+
+            if (isValidURL(address)) {
                 session_reg(address);
+            } else {
+                alert_dial("Please enter correct url and check if the devsimpy rest server needs authentication.", "home");
+                event.preventDefault();
             }
         });
     }
-
-
 });
