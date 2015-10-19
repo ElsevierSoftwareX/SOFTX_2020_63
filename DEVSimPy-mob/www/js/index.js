@@ -220,7 +220,14 @@ function list_dsp(data) {
 
         var items = [];
         // display filename of yaml file with last modified date and size
-        $.each(data['content'], function(filename, info){
+        $.each(data['content'], function (filename, info) {
+
+            // remove stored yaml
+            var url = sessionStorage.ip + "json?name=" + filename;
+            if (localStorage[url]) {
+                localStorage.removeItem(url)
+            }
+            
             items.push(
                 "<li class='table-view-cell media'>\
                 <a class='navigate-right' onClick=\"document.location.href='index.html?view=dsp&name="+filename+"'\" data-transition='slide-in'>\
@@ -321,12 +328,22 @@ function parse_prop(data, model, dsp) {
     };
 };
 
-function plot(filename) {
-    $(document).ready(function () {
-        $("<h1 class=\"title\">" + filename + "</h1>").appendTo('header');
-        $("<p>graph!</p>").appendTo("#plot");
-        console.log(filename);
+function plot(filename, data) {
+    $("<h1 class=\"title\">" + filename + "</h1>").appendTo('header');
+
+    FusionCharts.ready(function () {
+        var salesChart = new FusionCharts({
+            type: 'scrollline2d',
+            dataFormat: 'json',
+            renderAt: 'plot',
+            width: $(document).width() - 30,
+            height: $(document).height() - ($("#head2").height() + $("header").height() + 50),
+            dataSource: data
+        }).render();
     });
+
+    //console.log(filename);
+    
 }
 
 function discon(){
@@ -398,7 +415,15 @@ function simulate(filename, time) {
 
     var url = sessionStorage.ip + "simulate?name=" + filename + "&time=" + time;
 
-    var jqxhr = $.getJSON(url, function () {
+    console.log(url);
+
+    getCache(url).then(function (data) {
+        $('#spinner').show();
+        parse_result(data);
+        $('#spinner').hide();
+    });
+
+/*    var jqxhr = $.getJSON(url, function () {
                     console.log("success");
                 })
                 .done(function (data) {
@@ -409,16 +434,7 @@ function simulate(filename, time) {
                 .fail(function () {
                     alert_dia("Error during simulation. Please check the model!", "dsp&name=" + filename);
                 });
-  
-//    var jqxhr = $.ajax(url)
-//    .done(function (html) {
-//        console.log(data);
-//        $("#result").html(data);
-//    })
-//    .fail(function () {
-//        alert_dia("Error during simulation. Please check the model!", "dsp&name=" + filename);
-//    });
-
+*/
 };
 
 $(document).ready(function(){
@@ -439,6 +455,7 @@ $(document).ready(function(){
         });
 
         $("body").on('click', '#list', function (event) {
+            // remove diagram from localstorage (for getCache)
             window.location = "index.html?view=listing_dsp";
         });
 
@@ -497,8 +514,13 @@ $(document).ready(function(){
 
                 $('body').on('click', '#simulate', function (event) {
                     var time = $('#time').val();
-
+                    
                     if (isNumeric(time)) {
+                        //clear simulation result
+                        url = sessionStorage.ip + "simulate?name=" + name + "&time=" + time;
+                        if (localStorage.getItem(url)) {
+                            localStorage.removeItem(url);
+                        }
                         window.location = "index.html?view=result&name=" + name + "&time=" + time;
                     } else {
                         alert_dial("Time must be digit value.", "dsp&name=" + name);
@@ -609,18 +631,19 @@ $(document).ready(function(){
         } else if (controller == "plot") {
             renderView(controller);
 
-            var filename = getParameterByName("name");
+            var name = getParameterByName("name");
+            var dsp = getParameterByName("filename");
             var time = getParameterByName("time");
-           
+            var url = sessionStorage.ip + "plot?name=" + name;
+
+            // back_result button has been clicked
             $("body").on('click', '#back_result', function (event) {
-                window.location = "index.html?view=result&name="+filename+"&time="+time;
+                window.location = "index.html?view=result&name="+dsp+"&time="+time;
             });
 
-            var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
+            var jqxhr = $.getJSON(url)
                 .done(function (data) {
-                    //$('#spinner').show();
-                    plot(filename);
-                    //$('#spinner').hide();
+                    plot(name, data);
                 })
                 .fail(function (jqxhr, textStatus, error) {
                     var err = textStatus + ", " + error;
@@ -641,7 +664,7 @@ $(document).ready(function(){
             $("body").on('click', '#back_sim', function (event) {
                   window.location = "index.html?view=dsp&name=" + name;
             });
-
+       
             // performing simulation
             simulate(name, time);
     
