@@ -594,13 +594,21 @@ $(document).ready(function(){
                     for (i = 1; i < cells_tab.length; ++i) {
                         if (cells_tab[i]['id'] == model) {
                             var prop_obj = cells_tab[i]['prop']['data'];
-                            new_json_part = { 'filename': dsp, 'model':model, 'args': {} }
+                            new_json_part = { 'filename':dsp, 'model':model, 'args':{} }
                             for (name in prop_obj) {
                                 // get input value from form of the mobile app
                                 var new_val = $("#" + name).val();
 
-                                new_json_part['args'][name] = new_val
-
+                                if (isNumeric(new_val)) {
+                                    new_val = parseFloat(new_val);
+                                } else if (name == "fileName") {
+                                    console.log(prop_obj[name]);
+                                    var v = "\"" + new_val + "\"";
+                                    //new_val = v;
+                                }
+                                
+                                new_json_part['args'][name] = new_val;
+                                
                                 // update val into data object
                                 //data[dsp][0]['cells'][i]['prop']['data'][name] = new_val;
                             }
