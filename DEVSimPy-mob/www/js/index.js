@@ -437,6 +437,14 @@ function simulate(filename, time) {
 */
 };
 
+function hidePopover() {
+    var popovers = $('.popover');
+    $(popovers).removeClass('visible');
+    $(popovers).removeClass('active');
+    $(popovers).hide();
+    $("div.backdrop").remove();
+}
+
 $(document).ready(function(){
 
     // $.ajaxSetup({ cache: false });
@@ -446,8 +454,6 @@ $(document).ready(function(){
     if (is_connected()) {
 
         session_get();
-        
-        //discon();
 
         $("body").on('click', '#disconnect', function (event) {
             discon();
@@ -455,21 +461,22 @@ $(document).ready(function(){
         });
 
         $("body").on('click', '#list', function (event) {
+            hidePopover();
             // remove diagram from localstorage (for getCache)
             window.location = "index.html?view=listing_dsp";
         });
 
-        $("body").on('click', '#information', function (event) {
-            alert_dial("DEVSimPy-mob is a mobile app which aims to simulate DEVSimPy models from mobile environement.", this.location);
-        });
-
         var controller = getParameterByName("view");
-
-        console.log(controller);
 
         if (controller == "listing_dsp") {
             renderView(controller);
            
+            // Information menu has been clicked
+            $("body").on('click', '#information', function (event) {
+                hidePopover();
+                alert_dial("DEVSimPy-mob is a mobile app which aims to simulate DEVSimPy models from mobile environement.");
+            });
+
             // define function to populate the list of yaml file stored in the server
             var populate = function () {
                 $.getJSON(sessionStorage.ip + "yaml?filenames")
@@ -482,13 +489,15 @@ $(document).ready(function(){
                 });
             };
 
+            // Refresh button has been clicked
             $("body").on('click', '#refresh', function (event) {
+                hidePopover();
                 // clear before populate the list
                 $("#content-padded").empty();
-
                 populate();
             });
 
+            // populate the model list
             populate();
 
         } else if (controller == "dsp") {
@@ -497,6 +506,7 @@ $(document).ready(function(){
             var name = getParameterByName("name");
             var url = sessionStorage.ip + "json?name=" + name
 
+            // back button has been clicked
             $("body").on('click', '#back_list', function (event) {
                 // remove diagram from localstorage (for getCache)
                 localStorage.removeItem(url);
@@ -504,7 +514,15 @@ $(document).ready(function(){
                 window.location = "index.html?view=listing_dsp";
             });
 
+            // Information item menu has been clicked
+            $("body").on('click', '#information', function (event) {
+                hidePopover();
+                alert_dial("Feel free to edit or simualte the current model.", "dsp&name=" + name);
+            });
+
+            // Ajax call for model parsing
             getCache(url).then(function (data) {
+
                 $('#spinner').show();
                 parse_dsp(data, name);
                 $('#spinner').hide();
@@ -526,7 +544,6 @@ $(document).ready(function(){
                         alert_dial("Time must be digit value.", "dsp&name=" + name);
                     }
                 });
-
             });
 
  /*           var jqxhr = $.getJSON(url)
@@ -562,10 +579,12 @@ $(document).ready(function(){
             var dsp = getParameterByName("dsp");
             var model = getParameterByName("model");
           
+            // back button has been cliked
             $("body").on('click', '#back_model', function (event) {
                 window.location = "index.html?view=dsp&name=" + dsp;
             });
 
+            // save button has been clicked
             $("body").on('click', '#save_yaml', function (event) {
                 var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
                 .done(function (data) {
@@ -596,11 +615,7 @@ $(document).ready(function(){
                         contentType: "application/json; charset=utf-8",
                         dataType: 'json',
                         success: function (data) {
-                            //$.each(data, function (index, value) {
- //                           //    alert("index: " + index + " , value: " + value);
-                            //                           //});
-                            //console.log(data);
-                            alert_dial("Modification have been applied!", "dsp&name=" + dsp);
+                            alert_dial("Properties updated!", "dsp&name=" + dsp);
                         }
                     });
 
@@ -612,6 +627,7 @@ $(document).ready(function(){
 
             });
 
+            // Ajax call for properties parsing
             var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
                 .done(function (data) {
                     $('#spinner').show();
@@ -641,6 +657,7 @@ $(document).ready(function(){
                 window.location = "index.html?view=result&name="+dsp+"&time="+time;
             });
 
+            // Ajax call for plotting simulation results
             var jqxhr = $.getJSON(url)
                 .done(function (data) {
                     plot(name, data);
@@ -661,25 +678,20 @@ $(document).ready(function(){
             var name = getParameterByName("name");
             var time = getParameterByName("time");
 
+            // back button has been clicked
             $("body").on('click', '#back_sim', function (event) {
-                  window.location = "index.html?view=dsp&name=" + name;
+                window.location = "index.html?view=dsp&name=" + name;
             });
-       
+
             // performing simulation
             simulate(name, time);
-    
+
         } else {
-            window.location = "index.html?view=listing_dsp";            
+            window.location = "index.html?view=listing_dsp";
         }
         
-        //document.addEventListener(window.tlantic.plugins.socket.receiveHookName, function (ev) {
-        //    console.log('Data has been received: ', JSON.stringify(ev.metadata));
-        //    alert(ev.metadata.data);
-        //    var p = JSON.parse(ev.metadata.data);
-        //        console.log(p);
-        //    });
-
     } else {
+        // connect view 
 
         renderView();
 
