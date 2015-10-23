@@ -43,18 +43,6 @@ var getCache = function (url) {
     return supportsLocalStorage ? getStorage(url) : getJSON(url);
 
 };
-/*jQuery.ajaxSetup({
-    beforeSend: function () {
-        $('#spinner').show();
-    },
-    complete: function () {
-        $('#spinner').hide();
-    },
-    success: function () {
-        $('#spinner').hide();
-    }
-});
-*/
 
 function isValidURL(url) {
     var encodedURL = encodeURIComponent(url);
@@ -85,9 +73,9 @@ function alert_dial(info, redirect) {
                     <a class=\"icon icon-close pull-right\" onClick=\"window.location='index.html?view=" + redirect+ "'\"></a>\
                     <h1 class=\"title\">Information</h1>\
                     </header>\
-                    <div class=\"content\">\
-                    <p class=\"content-padded\">"+ info + "</p>\
-                    </div>").appendTo("#info");
+                    <div class=\"content\">"
+                    +info+
+                    "</div>").appendTo("#info");
     $("#info").addClass("active");
 };
 
@@ -449,6 +437,19 @@ $(document).ready(function(){
 
     // $.ajaxSetup({ cache: false });
 
+/*    $.ajaxSetup({
+    beforeSend: function () {
+        $('#spinner').show();
+    },
+    complete: function () {
+        $('#spinner').hide();
+    },
+    success: function () {
+        $('#spinner').hide();
+    }
+    });
+*/
+
     //$('body').on('click', 'a', renderView());
    
     if (is_connected()) {
@@ -474,7 +475,28 @@ $(document).ready(function(){
             // Information menu has been clicked
             $("body").on('click', '#information', function (event) {
                 hidePopover();
-                alert_dial("DEVSimPy-mob is a mobile app which aims to simulate DEVSimPy models from mobile environement.");
+                $.getJSON(sessionStorage.ip + "info")
+                .done(function (data) {
+                    alert_dial("<p class=\"content-padded\">DEVSimPy-mob is a mobile app which aims to simulate DEVSimPy models from mobile environement.</p><br />" +
+                            "<p><b>DEVSimPy-mob specifications:</b></p> <ul>"+
+                               "<li> <p><b>DEVSimPy version:</b> " + data['devsimpy-version'] + "</p></li>"+
+                               "<li> <p><b>DEVSimPy libs:</b> " + data['devsimpy-libraries'] + "</p></li>"+
+                               "<li> <p><b>DEVSimPy plugins:</b> " + data['devsimpy-plugins'] + "</p></li>" +
+                               "</ul>" +
+                               "<p><b> RestFull Server specification </b></p>" +
+                               "<ul>"+
+                               "<li><p>URL: " + data['url-server'] + "</p></li>" +
+                               "<li><p>Python version: " + data['python-version'] + "</p></li>" +
+                               "<li><p>Machine: " + data['machine-server'] + "</p></li>" +
+                               "<li><p>OS: " + data['os-server'] + "</p></li>" +
+                               "</ul>"
+
+                            );
+                })
+                .fail(function (jqxhr, textStatus, error) {
+                    var err = textStatus + ", " + error;
+                    console.log("Request Failed: " + err);
+                });
             });
 
             // define function to populate the list of yaml file stored in the server
@@ -517,7 +539,7 @@ $(document).ready(function(){
             // Information item menu has been clicked
             $("body").on('click', '#information', function (event) {
                 hidePopover();
-                alert_dial("Feel free to edit or simualte the current model.", "dsp&name=" + name);
+                alert_dial("<p class=\"content-padded\"> Feel free to edit or simualte the current model.</p>", "dsp&name=" + name);
             });
 
             // Ajax call for model parsing
@@ -541,7 +563,8 @@ $(document).ready(function(){
                         }
                         window.location = "index.html?view=result&name=" + name + "&time=" + time;
                     } else {
-                        alert_dial("Time must be digit value.", "dsp&name=" + name);
+                        
+                        alert_dial("<p class=\"content-padded\"> Time must be digit value.</p>", "dsp&name=" + name);
                     }
                 });
             });
@@ -599,13 +622,16 @@ $(document).ready(function(){
                                 // get input value from form of the mobile app
                                 var new_val = $("#" + name).val();
 
-                                if (isNumeric(new_val)) {
-                                    new_val = parseFloat(new_val);
-                                } else if (name == "fileName") {
-                                    console.log(prop_obj[name]);
-                                    var v = "\"" + new_val + "\"";
-                                    //new_val = v;
-                                }
+                                //if (isNumeric(new_val)) {
+                                //    new_val = parseFloat(new_val);
+                                //} else if (name == "fileName") {
+                                    //console.log(prop_obj[name]);
+                                    //console.log(new_val);
+                                //    var v = new_val;
+                                //    new_val = v;
+                                //} else if (new_val == 'false' || new_val == 'true') {
+                                //    new_val = JSON.parse(new_val);
+                                //}
                                 
                                 new_json_part['args'][name] = new_val;
                                 
@@ -614,7 +640,7 @@ $(document).ready(function(){
                             }
                         }
                     }
-                    //console.log(new_json_part);
+                    //console.log(JSON.stringify(new_json_part));
                     $.ajax
                     ({
                         type: 'POST',
@@ -623,7 +649,8 @@ $(document).ready(function(){
                         contentType: "application/json; charset=utf-8",
                         dataType: 'json',
                         success: function (data) {
-                            alert_dial("Properties updated!", "dsp&name=" + dsp);
+                            console.log(data);
+                            alert_dial("<p class=\"content-padded\"> Properties updated!</p>", "dsp&name=" + dsp);
                         }
                     });
 
@@ -718,7 +745,7 @@ $(document).ready(function(){
             if (isValidURL(address)) {
                 session_reg(address);
             } else {
-                alert_dial("Please enter correct url and check if the devsimpy rest server needs authentication.", "home");
+                alert_dial(" <p class=\"content-padded\"> Please enter correct url and check if the devsimpy rest server needs authentication.</p>", "home");
                 event.preventDefault();
             }
         });
