@@ -1,0 +1,41 @@
+issu de https://www.youtube.com/watch?v=uciM7h_gQJo
+
+1/ keytool -genkey -v -keystore devsimpymob.key -alias devsimpy -keyalg RSA -keysize 2048 -validity 10000
+
+2/ copier devsimpymob.key dans un rep
+
+3/ renseigner dans visual studio le fichier build.json comme par exemple:
+
+{
+     "android": {
+      
+	"release": {
+        
+		"alias": "capocchi",
+
+		"keystore": "D:\\Recherche\\Visual-Studio\\DEVSimPy_mob\\android.keystore",
+        
+		"keystoreType": "jks",
+
+		"password": "devsimpy",
+
+		"storePassword": "devsimpy"
+      
+	}
+     
+}
+ }
+
+4/ faire un Générer->Générer la solution dans visual studio
+
+5/ le fichier signé "android-release.apk" est dans le rep bin/Android/Release
+
+//fait par visual studio 4/ jarsigner -verbose -sigalg SHA1withRSA -digestalg SHA1 -keystore devsimpymob.key android-release-unsigned.apk devsimpy
+
+6/ zipalign -v 4 android-release-unsigned.apk devsimpymob-release.apk
+
+ancien Nom d'alias : miibijanbgkqhkig9w0baqefaaocaq8amiibcgkcaqeakkutl4+bgemro0dnb4ww0rdthvum6kylxzqa1s4swfystpvan8ppmqphsos4pcvphu8kfwcvaiynyqhtcoptlenpssnhaexox+vnd5uwtwuag/urfu0da4evioor+z7my3kko0vzqhav+n7eanrmit/ptlbzhh8wo8lsfzoi76iczmiya+e0siyrryjm7ztiobhywk+pgalfsy6+knvgnc5zwsxdwqrd+sedrnvlns5nrrcyuv0hmlygdda544+ymhe5bqgs20tcvpqtai2oy1aovdgmjuytb3+fflwp0kxb/vujd5fbhcfc1vcqzzim3frqnpbszpq4nx0gr0jipqidaqab
+
+non de package : fr.univ_corse.devsimpy_mob
+
+fichier apk généré dans C:\Users\capocchi_l.UDCPP\Documents\Visual Studio 2015\Projects\BlankCordovaApp2\BlankCordovaApp2\platforms\android\build\outputs\apk

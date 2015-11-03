@@ -1,6 +1,6 @@
 <div id="popover" class="popover">
     <ul class="table-view">
-        <li class="table-view-cell"><a id="list">List</a></li>
+        <li class="table-view-cell"><a id="list">Models</a></li>
         <li class="table-view-cell"><a id="information">Information</a></li>
         <li class="table-view-cell"><a id="disconnect">Quit</a></li>
     </ul>
@@ -34,7 +34,7 @@
     <div class="card">
         <span id="diagram" class="control-content active">
             <div id="paper">
-                <div id="spinner" class="center">
+                <div id="spinner1" class="center">
                     <img src="img/ajax-loader.gif" alt="Loading..." />
                 </div>
             </div>
@@ -42,23 +42,13 @@
         <span id="description" class="control-content">
         </span>
         <span id="simulation" class="control-content">
-        
-            <form class="input-group">
-                <div class="input-row">
-                    <label>Time</label>
-                    <input id="time" type="text" value="10" maxlength="4">
+            <div class="card" id="setting">
+                <div id="spinner2" class="center">
+                    <img src="img/ajax-loader.gif" alt="Loading..." />
                 </div>
-            </form>
- <!--           <ul class="table-view">
-                <li class="table-view-cell">
-                    No time limit
-                    <div id ="ntl" class="toggle">
-                        <div class="toggle-handle"></div>
-                    </div>
-                </li>
-            </ul>
- -->
-            <button id="simulate" class="btn btn-primary btn-block">Simulate</button>   
-        </span>
+            </div>
+                
+                <button id="simulate" class="btn btn-primary btn-block">Simulate</button>
+</span>
     </div>
 </div>

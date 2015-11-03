@@ -45,22 +45,21 @@ var getCache = function (url) {
 };
 
 function isValidURL(url) {
-    var encodedURL = encodeURIComponent(url);
     var isValid = false;
 
     $.ajax({
-        url: "http://query.yahooapis.com/v1/public/yql?q=select%20*%20from%20html%20where%20url%3D%22" + encodedURL + "%22&format=json",
+        url: url + "info",
         type: "get",
         async: false,
         dataType: "json",
         success: function (data) {
-            isValid = data.query.results != null;
+            isValid = data != null;
         },
         error: function () {
             isValid = false;
         }
     });
-    
+
     return isValid;
 };
 
@@ -70,36 +69,36 @@ function isNumeric(obj) {
 
 function alert_dial(info, redirect) {
     $("<header class=\"bar bar-nav\">\
-                    <a class=\"icon icon-close pull-right\" onClick=\"window.location='index.html?view=" + redirect+ "'\"></a>\
+                    <a class=\"icon icon-close pull-right\" onClick=\"window.location='index.html?view=" + redirect + "'\"></a>\
                     <h1 class=\"title\">Information</h1>\
                     </header>\
                     <div class=\"content\">"
-                    +info+
+                    + info +
                     "</div>").appendTo("#info");
     $("#info").addClass("active");
 };
 
 var app = {
     // Application Constructor
-    initialize: function() {
+    initialize: function () {
         this.bindEvents();
     },
     // Bind Event Listeners
     //
     // Bind any events that are required on startup. Common events are:
     // 'load', 'deviceready', 'offline', and 'online'.
-    bindEvents: function() {
+    bindEvents: function () {
         document.addEventListener('deviceready', this.onDeviceReady, false);
     },
     // deviceready Event Handler
     //
     // The scope of 'this' is the event. In order to call the 'receivedEvent'
     // function, we must explicitly call 'app.receivedEvent(...);'
-    onDeviceReady: function() {
+    onDeviceReady: function () {
         app.receivedEvent('deviceready');
     },
     // Update DOM on a Received Event
-    receivedEvent: function(id) {
+    receivedEvent: function (id) {
         var parentElement = document.getElementById(id);
         var listeningElement = parentElement.querySelector('.listening');
         var receivedElement = parentElement.querySelector('.received');
@@ -138,23 +137,22 @@ function createCORSRequest(method, url) {
 }
 
 
-function getParameterByName(param)
-{
+function getParameterByName(param) {
     var results = new RegExp('[\?&]' + param + '=([^&#]*)').exec(window.location.href);
-    if (results==null){
-       return null;
+    if (results == null) {
+        return null;
     } else {
         return results[1] || 0;
     }
-}  
+}
 
 function renderView(controller) {
-   
+
     if (!controller) {
         controller = getParameterByName("view");
     }
-    if (controller){
-        $("#container").load("views/modules/"+controller+".html");
+    if (controller) {
+        $("#container").load("views/modules/" + controller + ".html");
     } else {
         renderView("home");
     }
@@ -206,46 +204,96 @@ function list_param(data) {
 
 function list_dsp(data) {
 
-        var items = [];
-        // display filename of yaml file with last modified date and size
-        $.each(data['content'], function (filename, info) {
+    var items = [];
+    // display filename of yaml file with last modified date and size
+    $.each(data['content'], function (filename, info) {
 
-            // remove stored yaml
-            var url = sessionStorage.ip + "json?name=" + filename;
-            if (localStorage[url]) {
-                localStorage.removeItem(url)
-            }
-            
-            items.push(
-                "<li class='table-view-cell media'>\
-                <a class='navigate-right' onClick=\"document.location.href='index.html?view=dsp&name="+filename+"'\" data-transition='slide-in'>\
+        // remove stored yaml
+        var url = sessionStorage.ip + "json?name=" + filename;
+        if (localStorage[url]) {
+            localStorage.removeItem(url)
+        }
+
+        items.push(
+            "<li class='table-view-cell media'>\
+                <a class='navigate-right' onClick=\"document.location.href='index.html?view=dsp&name="+ filename + "'\" data-transition='slide-in'>\
                     <span class=\"media-object pull-left icon icon-pages\"></span>\
                     <div class='media-body'>\
                     " + filename.replace(/(.*)\.[^.]+$/, "$1") +
-                    "<p>" + info["last modified"] + "<br />" + info["size"] + "</p>\
+                "<p>" + info["last modified"] + "<br />" + info["size"] + "</p>\
                     </div>\
                 </a>\
             </li>" );
-        });
+    });
 
-        $("<ul/>", {
-            "class": "table-view",
-            html: items.join("")
-        }).appendTo("#content-padded");
+    $("<ul/>", {
+        "class": "table-view",
+        html: items.join("")
+    }).appendTo("#content-padded");
+};
+
+function list_labels(data, filename) {
+
+    // remove stored yaml
+    var url = sessionStorage.ip + "yaml/labels?name=" + filename;
+    if (localStorage[url]) {
+        localStorage.removeItem(url)
+    }
+
+    // insert the first separator before populate the list of models 
+    var code = "<li class=\"table-view-cell table-view-divider\">Models settings</li>"
+    $("<ul/>", {
+        "class": "table-view",
+        html: code
+    }).appendTo("#setting");
+
+    //populate the list
+    var items = [];
+    
+    $.each(data['output'], function (id, name) {
+        items.push(
+            "<li class='table-view-cell'>\
+                <a class='navigate-right' onClick=\"document.location.href='index.html?view=model_param&model=" + name + "&dsp=" + filename + "'\" data-transition='slide-in'> \
+                    <div class='media-body'>\
+                    " + name + "</div>\
+                </a>\
+            </li>" );
+    });
+
+    $("<ul/>", {
+        "class": "table-view",
+        html: items.join("")
+    }).appendTo("#setting");
+
+    // close the list by inserting the simulation options
+    var code = "<li class=\"table-view-cell table-view-divider\">Simulation settings</li> \
+     <li class=\"table-view-cell\"> \
+               <form class=\"input-group\"> \
+                    <div class=\"input-row\"> \
+                        <label>Time</label> \
+                            <input id=\"time\" type=\"text\" value=\"10\" maxlength=\"4\"> \
+                        </div> \
+                    </form> \
+     </li> "
+    $("<ul/>", {
+        "class": "table-view",
+        html: code
+    }).appendTo("#setting");
+
 };
 
 function parse_result(data) {
 
-    var filename = data['file'].replace(/.*\/|\.[^.]*$/g, '')+'.yaml';
+    var filename = data['file'].replace(/.*\/|\.[^.]*$/g, '') + '.yaml';
     var time = data['time'];
 
     var items = [];
     $.each(data, function (key, val) {
         if (key == 'time' || key == 'date' || key == 'duration') {
             items.push(
-                "<li class=\"table-view-cell\">"+key+"<span class=\"badge\">" + val + "</span></li>"
+                "<li class=\"table-view-cell\">" + key + "<span class=\"badge\">" + val + "</span></li>"
             );
-        } else if (key == 'output'){
+        } else if (key == 'output') {
             items.push(
                 "<li class=\"table-view-divider\">Generated files</li>"
             );
@@ -253,15 +301,15 @@ function parse_result(data) {
             $.each(val, function (index, v) {
                 items.push(
                     "<li class='table-view-cell media'>\
-                    <a class='navigate-right' onClick=\"document.location.href='index.html?view=plot&name="+v['name']+"&time="+time+"&filename="+filename+"'\" data-transition='slide-in'>\
+                    <a class='navigate-right' onClick=\"document.location.href='index.html?view=plot&name="+ v['name'] + "&time=" + time + "&filename=" + filename + "'\" data-transition='slide-in'>\
                         <div class='media-body'>\
-                        <p>" + v['name']+"</p>\
+                        <p>" + v['name'] + "</p>\
                         </div>\
                     </a>\
-                </li>" 
+                </li>"
                 );
             });
-        } 
+        }
     });
 
     $("<br /><p style='text-align: center;'>Simulation succeffuly completed!</p>").insertBefore('.card');
@@ -272,20 +320,19 @@ function parse_result(data) {
     }).appendTo("#result");
 }
 
-function parse_dsp(data, dsp){
+function parse_dsp(data, dsp) {
 
     var obj = data[dsp];
     // var atomic_models = obj[0].models[0].atomic_models;
     // var coupled_models = obj[0].models[0].coupled_models;
     // var connections = obj[0].models[0].connections;
     var cells = obj[0];
-    var description = obj[1].description;
+    var description = obj[1].description != "" ? obj[1].description : "No description for this model.";
 
     draw(cells);
 
     // add description Segmented control
     $("<p>" + description + "</p>").appendTo("#description");
-   
 };
 
 function parse_prop(data, model, dsp) {
@@ -295,7 +342,7 @@ function parse_prop(data, model, dsp) {
     for (item in obj[0].cells) {
         var elem = obj[0].cells[item];
         var typ = elem.type;
-        
+
         if (typ == 'devs.Atomic' && elem.id == model) {
             var prop = elem.prop.data;
             var items = [];
@@ -331,10 +378,10 @@ function plot(filename, data) {
     });
 
     //console.log(filename);
-    
+
 }
 
-function discon(){
+function discon() {
     // disconnect();
     delete sessionStorage.ip;
     sessionStorage.clear();
@@ -346,21 +393,27 @@ function draw(json) {
 
     var paper = new joint.dia.Paper({
         el: $('#paper'),
-        width: $(document).width()-30,
-        height: $(document).height()-($("#head2").height()+$("header").height()+50),
+        width: $(document).width() - 30,
+        height: $(document).height() - ($("#head2").height() + $("header").height() + 50),
         gridSize: 1,
         model: graph,
         perpendicularLinks: true
     });
 
+ //   PreventGhostClick("#paper");
+
+ //   $("#paper").hammer().bind("doubletap", function (ev) {
+ //       console.log('test');
+ //   });
+
     // double click on model
-    paper.on('cell:pointerdblclick',
+   paper.on('cell:pointerdblclick',
     function (cellView, evt, x, y) {
         var dsp = $('#dsp').text();
         var m = cellView.model
         //var data = m.attributes.prop.data;
 
-        window.location = "index.html?view=model_param&model=" + m.id + "&dsp=" + dsp+'.yaml';
+        window.location = "index.html?view=model_param&model=" + m.id + "&dsp=" + dsp + '.yaml';
     });
 
     graph.fromJSON(json);
@@ -388,7 +441,7 @@ function send(data) {
 };
 
 function disconnect() {
-    window.tlantic.plugins.socket.disconnect(stub, stub, sessionStorage.getItem('ip')+':80');
+    window.tlantic.plugins.socket.disconnect(stub, stub, sessionStorage.getItem('ip') + ':80');
 };
 
 function disconnectAll() {
@@ -410,19 +463,6 @@ function simulate(filename, time) {
         parse_result(data);
         $('#spinner').hide();
     });
-
-/*    var jqxhr = $.getJSON(url, function () {
-                    console.log("success");
-                })
-                .done(function (data) {
-                    $('#spinner').show();
-                    parse_result(data);
-                    $('#spinner').hide();
-                })
-                .fail(function () {
-                    alert_dia("Error during simulation. Please check the model!", "dsp&name=" + filename);
-                });
-*/
 };
 
 function hidePopover() {
@@ -433,27 +473,27 @@ function hidePopover() {
     $("div.backdrop").remove();
 }
 
-$(document).ready(function(){
+$(document).ready(function () {
 
     // $.ajaxSetup({ cache: false });
 
-/*    $.ajaxSetup({
-    beforeSend: function () {
-        $('#spinner').show();
-    },
-    complete: function () {
-        $('#spinner').hide();
-    },
-    success: function () {
-        $('#spinner').hide();
-    }
-    });
-*/
+    /*    $.ajaxSetup({
+        beforeSend: function () {
+            $('#spinner').show();
+        },
+        complete: function () {
+            $('#spinner').hide();
+        },
+        success: function () {
+            $('#spinner').hide();
+        }
+        });
+    */
 
     //$('body').on('click', 'a', renderView());
-   
-    if (is_connected()) {
 
+    if (is_connected()) {
+        
         session_get();
 
         $("body").on('click', '#disconnect', function (event) {
@@ -471,20 +511,20 @@ $(document).ready(function(){
 
         if (controller == "listing_dsp") {
             renderView(controller);
-           
+
             // Information menu has been clicked
             $("body").on('click', '#information', function (event) {
                 hidePopover();
                 $.getJSON(sessionStorage.ip + "info")
                 .done(function (data) {
                     alert_dial("<p class=\"content-padded\">DEVSimPy-mob is a mobile app which aims to simulate DEVSimPy models from mobile environement.</p><br />" +
-                            "<p><b>DEVSimPy-mob specifications:</b></p> <ul>"+
-                               "<li> <p><b>DEVSimPy version:</b> " + data['devsimpy-version'] + "</p></li>"+
-                               "<li> <p><b>DEVSimPy libs:</b> " + data['devsimpy-libraries'] + "</p></li>"+
+                            "<p><b>DEVSimPy-mob specifications:</b></p> <ul>" +
+                               "<li> <p><b>DEVSimPy version:</b> " + data['devsimpy-version'] + "</p></li>" +
+                               "<li> <p><b>DEVSimPy libs:</b> " + data['devsimpy-libraries'] + "</p></li>" +
                                "<li> <p><b>DEVSimPy plugins:</b> " + data['devsimpy-plugins'] + "</p></li>" +
                                "</ul>" +
                                "<p><b> RestFull Server specification </b></p>" +
-                               "<ul>"+
+                               "<ul>" +
                                "<li><p>URL: " + data['url-server'] + "</p></li>" +
                                "<li><p>Python version: " + data['python-version'] + "</p></li>" +
                                "<li><p>Machine: " + data['machine-server'] + "</p></li>" +
@@ -526,12 +566,13 @@ $(document).ready(function(){
             renderView(controller);
 
             var name = getParameterByName("name");
-            var url = sessionStorage.ip + "json?name=" + name
+            var url1 = sessionStorage.ip + "json?name=" + name
+            var url2 = sessionStorage.ip + "yaml/labels?name=" + name
 
             // back button has been clicked
             $("body").on('click', '#back_list', function (event) {
                 // remove diagram from localstorage (for getCache)
-                localStorage.removeItem(url);
+                localStorage.removeItem(url1);
                 // redirect to the list of dsp (yaml)
                 window.location = "index.html?view=listing_dsp";
             });
@@ -543,18 +584,18 @@ $(document).ready(function(){
             });
 
             // Ajax call for model parsing
-            getCache(url).then(function (data) {
+            getCache(url1).then(function (data) {
 
-                $('#spinner').show();
+                $('#spinner1').show();
                 parse_dsp(data, name);
-                $('#spinner').hide();
+                $('#spinner1').hide();
 
                 // completed
                 $("<h1 id=\"dsp\" class=\"title\">" + name.replace(/(.*)\.[^.]+$/, "$1") + "</h1>").appendTo('header');
 
                 $('body').on('click', '#simulate', function (event) {
                     var time = $('#time').val();
-                    
+
                     if (isNumeric(time)) {
                         //clear simulation result
                         url = sessionStorage.ip + "simulate?name=" + name + "&time=" + time;
@@ -563,45 +604,28 @@ $(document).ready(function(){
                         }
                         window.location = "index.html?view=result&name=" + name + "&time=" + time;
                     } else {
-                        
+
                         alert_dial("<p class=\"content-padded\"> Time must be digit value.</p>", "dsp&name=" + name);
                     }
                 });
             });
 
- /*           var jqxhr = $.getJSON(url)
-                .done(function (data) {
-                    //ActivityIndicator.show("sdc");
-                    parse_dsp(data, name);
-                    $('#spinner').hide();
-                    //ActivityIndicator.hide();
-                })
-                .fail(function( jqxhr, textStatus, error ) {
-                        var err = textStatus + ", " + error;
-                        console.log( "Request Failed: " + err );
+            // Ajax call for model parsing
+            getCache(url2).then(function (data) {
+
+                $('#spinner2').show();
+                list_labels(data, name);
+                $('#spinner2').hide();
+
+                // completed
             });
 
-            // only when model has been correctly loaded 
-            jqxhr.complete(function () {
-               $("<h1 id=\"dsp\" class=\"title\">" + name.replace(/(.*)\.[^.]+$/, "$1") + "</h1>").appendTo('header');
-
-               $('body').on('click', '#simulate', function (event) {
-                   var time = $('#time').val();
-
-                   if (isNumeric(time)) {
-                       window.location = "index.html?view=result&name="+name+"&time="+time;
-                   } else {
-                       alert_dial("Time must be digit value.", "dsp&name=" + name);
-                   }
-               });
-            });
-*/
         } else if (controller == "model_param") {
             renderView(controller);
 
             var dsp = getParameterByName("dsp");
             var model = getParameterByName("model");
-          
+
             // back button has been cliked
             $("body").on('click', '#back_model', function (event) {
                 window.location = "index.html?view=dsp&name=" + dsp;
@@ -611,13 +635,13 @@ $(document).ready(function(){
             $("body").on('click', '#save_yaml', function (event) {
                 var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
                 .done(function (data) {
-                    
+
                     var cells_tab = data[dsp][0]['cells'];
                     var i;
                     for (i = 1; i < cells_tab.length; ++i) {
                         if (cells_tab[i]['id'] == model) {
                             var prop_obj = cells_tab[i]['prop']['data'];
-                            new_json_part = { 'filename':dsp, 'model':model, 'args':{} }
+                            new_json_part = { 'filename': dsp, 'model': model, 'args': {} }
                             for (name in prop_obj) {
                                 // get input value from form of the mobile app
                                 var new_val = $("#" + name).val();
@@ -625,16 +649,16 @@ $(document).ready(function(){
                                 //if (isNumeric(new_val)) {
                                 //    new_val = parseFloat(new_val);
                                 //} else if (name == "fileName") {
-                                    //console.log(prop_obj[name]);
-                                    //console.log(new_val);
+                                //console.log(prop_obj[name]);
+                                //console.log(new_val);
                                 //    var v = new_val;
                                 //    new_val = v;
                                 //} else if (new_val == 'false' || new_val == 'true') {
                                 //    new_val = JSON.parse(new_val);
                                 //}
-                                
+
                                 new_json_part['args'][name] = new_val;
-                                
+
                                 // update val into data object
                                 //data[dsp][0]['cells'][i]['prop']['data'][name] = new_val;
                             }
@@ -644,7 +668,7 @@ $(document).ready(function(){
                     $.ajax
                     ({
                         type: 'POST',
-                        url: 'http://lcapocchi.pythonanywhere.com/yaml/save',
+                        url: sessionStorage.ip + "yaml/save",
                         data: JSON.stringify(new_json_part),
                         contentType: "application/json; charset=utf-8",
                         dataType: 'json',
@@ -689,7 +713,7 @@ $(document).ready(function(){
 
             // back_result button has been clicked
             $("body").on('click', '#back_result', function (event) {
-                window.location = "index.html?view=result&name="+dsp+"&time="+time;
+                window.location = "index.html?view=result&name=" + dsp + "&time=" + time;
             });
 
             // Ajax call for plotting simulation results
@@ -724,28 +748,29 @@ $(document).ready(function(){
         } else {
             window.location = "index.html?view=listing_dsp";
         }
-        
+
     } else {
         // connect view 
 
         renderView();
-
+        
         $('body').on('submit', '#connection', function (event) {
             var ip = $("#ip").val();
             var username = $("#username").val();
             var password = $("#password").val();
+            var address = 'http://';
 
             // devsimpy rest server need authentication ? 
-            if (username != "" && password != ""){
-                var address = 'http://'+ username + ":" + password +"@"+ ip + '/';
+            if (username != "" && password != "") {
+                address += username + ":" + password + "@" + ip + '/';
             } else {
-                var address = 'http://' + ip + '/';
+                address += ip + '/';
             }
 
             if (isValidURL(address)) {
                 session_reg(address);
             } else {
-                alert_dial(" <p class=\"content-padded\"> Please enter correct url and check if the devsimpy rest server needs authentication.</p>", "home");
+                alert_dial(" <p class=\"content-padded\"> Please enter correct url and check first if you have network and second if the devsimpy rest server needs authentication.</p>", "home");
                 event.preventDefault();
             }
         });
