@@ -385,7 +385,6 @@ function discon() {
     // disconnect();
     delete sessionStorage.ip;
     sessionStorage.clear();
-    //alert('Disconnected!');
 };
 
 function draw(json) {
@@ -497,8 +496,21 @@ $(document).ready(function () {
         session_get();
 
         $("body").on('click', '#disconnect', function (event) {
-            discon();
-            window.location = "index.html";
+            function onConfirm(buttonIndex) {
+                //alert('You selected button ' + buttonIndex);
+                if (buttonIndex == '1') {
+                    discon();
+                    window.location = "index.html";
+                }
+            }
+
+            navigator.notification.confirm(
+                'Are you sure you want to quit DEVSimPy-mob?', // message
+                 onConfirm,            // callback to invoke with index of button pressed
+                'Warning',           // title
+                ['Yes', 'No']     // buttonLabels
+            );
+            
         });
 
         $("body").on('click', '#list', function (event) {
@@ -633,6 +645,9 @@ $(document).ready(function () {
 
             // save button has been clicked
             $("body").on('click', '#save_yaml', function (event) {
+
+                
+
                 var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
                 .done(function (data) {
 
@@ -673,8 +688,17 @@ $(document).ready(function () {
                         contentType: "application/json; charset=utf-8",
                         dataType: 'json',
                         success: function (data) {
-                            console.log(data);
-                            alert_dial("<p class=\"content-padded\"> Properties updated!</p>", "dsp&name=" + dsp);
+                            function alertDismissed() {
+                                console.log(data);
+                            }
+
+                            navigator.notification.alert(
+                                'Properties updated!',  // message
+                                alertDismissed,         // callback
+                                'Warning',            // title
+                                'Ok'                  // buttonName
+                            );
+                            //alert_dial("<p class=\"content-padded\"> Properties updated!</p>", "dsp&name=" + dsp);
                         }
                     });
 
@@ -687,7 +711,9 @@ $(document).ready(function () {
             });
 
             // Ajax call for properties parsing
-            var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
+            var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp, function() {
+                $("<h1 id='dsp' class=\"title\">" + model + "</h1>").appendTo('header');
+            })
                 .done(function (data) {
                     $('#spinner').show();
                     parse_prop(data, model, dsp);
@@ -696,12 +722,10 @@ $(document).ready(function () {
                 .fail(function (jqxhr, textStatus, error) {
                     var err = textStatus + ", " + error;
                     console.log("Request Failed: " + err);
-                });
-
-            // only when model has been correctly loaded 
-            jqxhr.complete(function () {
-                $("<h1 id='dsp' class=\"title\">" + model + "</h1>").appendTo('header');
-            });
+                })
+                //.always(function () {
+                //       $("<h1 id='dsp' class=\"title\">" + model + "</h1>").appendTo('header');
+                // });
 
         } else if (controller == "plot") {
             renderView(controller);
