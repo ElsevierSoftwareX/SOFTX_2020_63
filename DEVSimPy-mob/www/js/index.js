@@ -1,5 +1,21 @@
 var key = "";
 
+//var urls = [];
+//localStorage["urls"] = JSON.stringify(urls);
+// For removing single Key
+//localStorage.removeItem("urls");
+
+function restoreUrls() {
+    var urls = [];
+    try {
+        urls = JSON.parse(localStorage["urls"]);
+    }
+    catch (e) {
+        localStorage["urls"] = JSON.stringify(urls);
+    }
+    return urls;
+}
+
 var getCache = function (url) {
 
     var supportsLocalStorage = 'localStorage' in window;
@@ -152,7 +168,9 @@ function renderView(controller) {
         controller = getParameterByName("view");
     }
     if (controller) {
-        $("#container").load("views/modules/" + controller + ".html");
+        $("#container").load("views/modules/" + controller + ".html", function () {
+            $(this).trigger('document_change');
+        });
     } else {
         renderView("home");
     }
@@ -777,7 +795,19 @@ $(document).ready(function () {
         // connect view 
 
         renderView();
-        
+
+        // document_change event is triggered by the renderView function in order to be sure that the page is loaded
+        $(document).on('document_change', function () {
+            // sure that datalist element exist
+            if ($('#datalist')) {
+                // restore urls list from localstorage and populate the datalist
+                var urls = restoreUrls();
+                $.each(urls, function (index, value) {
+                    $("<option value='"+value+"'>").appendTo($('#datalist'));
+                });
+            }
+        });
+
         $('body').on('submit', '#connection', function (event) {
             var ip = $("#ip").val();
             var username = $("#username").val();
@@ -793,6 +823,9 @@ $(document).ready(function () {
 
             if (isValidURL(address)) {
                 session_reg(address);
+                // store the address in urls list object in the localstorage
+                urls.push(address);
+                localStorage.setItem('urls', JSON.stringify(urls));
             } else {
                 alert_dial(" <p class=\"content-padded\"> Please enter correct url and check first if you have network and second if the devsimpy rest server needs authentication.</p>", "home");
                 event.preventDefault();
