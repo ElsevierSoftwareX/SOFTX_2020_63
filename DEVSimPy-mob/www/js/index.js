@@ -5,15 +5,12 @@ var key = "";
 // For removing single Key
 //localStorage.removeItem("urls");
 
-function restoreUrls() {
-    var urls = [];
-    try {
-        urls = JSON.parse(localStorage["urls"]);
+var add_url = function (ip) {
+    var urls = JSON.parse(localStorage["urls"]);
+    if ($.inArray(ip, urls) < 0) {
+        urls.push(ip);
+        localStorage.setItem('urls', JSON.stringify(urls));
     }
-    catch (e) {
-        localStorage["urls"] = JSON.stringify(urls);
-    }
-    return urls;
 }
 
 var getCache = function (url) {
@@ -382,8 +379,6 @@ function parse_prop(data, model, dsp) {
 };
 
 function plot(filename, data) {
-    $("<h1 class=\"title\">" + filename + "</h1>").appendTo('header');
-
     FusionCharts.ready(function () {
         var salesChart = new FusionCharts({
             type: 'scrollline2d',
@@ -394,9 +389,6 @@ function plot(filename, data) {
             dataSource: data
         }).render();
     });
-
-    //console.log(filename);
-
 }
 
 function discon() {
@@ -569,7 +561,7 @@ $(document).ready(function () {
                 });
             });
 
-            // define function to populate the list of yaml file stored in the server
+            // define function to populate the list of yaml files stored in the server
             var populate = function () {
                 $.getJSON(sessionStorage.ip + "yaml?filenames")
                 .done(function (data) {
@@ -656,6 +648,10 @@ $(document).ready(function () {
             var dsp = getParameterByName("dsp");
             var model = getParameterByName("model");
 
+            $(document).on('document_change', function () {
+                $("<h1 id='dsp' class=\"title\">" + model + "</h1>").appendTo('header');
+            });
+
             // back button has been cliked
             $("body").on('click', '#back_model', function (event) {
                 window.location = "index.html?view=dsp&name=" + dsp;
@@ -663,8 +659,6 @@ $(document).ready(function () {
 
             // save button has been clicked
             $("body").on('click', '#save_yaml', function (event) {
-
-                
 
                 var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
                 .done(function (data) {
@@ -729,9 +723,7 @@ $(document).ready(function () {
             });
 
             // Ajax call for properties parsing
-            var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp, function() {
-                $("<h1 id='dsp' class=\"title\">" + model + "</h1>").appendTo('header');
-            })
+            var jqxhr = $.getJSON(sessionStorage.ip + "json?name=" + dsp)
                 .done(function (data) {
                     $('#spinner').show();
                     parse_prop(data, model, dsp);
@@ -753,6 +745,11 @@ $(document).ready(function () {
             var time = getParameterByName("time");
             var url = sessionStorage.ip + "plot?name=" + name;
 
+            // document_change event is triggered by the renderView function in order to be sure that the page is loaded
+            $(document).on('document_change', function () {
+                $("<h1 class=\"title\">" + name + "</h1>").appendTo('header');
+            });
+
             // back_result button has been clicked
             $("body").on('click', '#back_result', function (event) {
                 window.location = "index.html?view=result&name=" + dsp + "&time=" + time;
@@ -766,12 +763,7 @@ $(document).ready(function () {
                 .fail(function (jqxhr, textStatus, error) {
                     var err = textStatus + ", " + error;
                     console.log("Request Failed: " + err);
-                });
-
-            // only when model has been correctly loaded 
-            //jqxhr.complete(function () {
-            //    $("<h1 id='dsp' class=\"title\">" + model + "</h1>").appendTo('header');
-            //});           
+                });    
 
         } else if (controller == "result") {
             renderView(controller);
@@ -800,11 +792,15 @@ $(document).ready(function () {
         $(document).on('document_change', function () {
             // sure that datalist element exist
             if ($('#datalist')) {
-                // restore urls list from localstorage and populate the datalist
-                var urls = restoreUrls();
-                $.each(urls, function (index, value) {
-                    $("<option value='"+value+"'>").appendTo($('#datalist'));
-                });
+                try {
+                    //console.log(localStorage.getItem("urls"));
+                    // restore urls list from localstorage and populate the datalist
+                    $.each(JSON.parse(localStorage.getItem("urls")), function (index, value) {
+                        $("<option value='" + value + "'>").appendTo($('#datalist'));
+                    });
+                } catch (e) {
+                    localStorage.setItem('urls', JSON.stringify([]));
+                }
             }
         });
 
@@ -821,11 +817,11 @@ $(document).ready(function () {
                 address += ip + '/';
             }
 
+            // if URL is valid
             if (isValidURL(address)) {
-                session_reg(address);
                 // store the address in urls list object in the localstorage
-                urls.push(address);
-                localStorage.setItem('urls', JSON.stringify(urls));
+                add_url(ip);
+                session_reg(address);
             } else {
                 alert_dial(" <p class=\"content-padded\"> Please enter correct url and check first if you have network and second if the devsimpy rest server needs authentication.</p>", "home");
                 event.preventDefault();
