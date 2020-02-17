@@ -15,5 +15,5 @@ DEVSimPy-mob uses a number of open source projects to work properly:
 
 # Installation
 <p align="justify">
-DEVSimPy-mob is a hybrid application which can be integrated into an Apache Cordova project using [Eclipse](https://eclipse.org/), [Visual studio](https://www.visualstudio.com/fr-fr/features/cordova-vs.aspx) or [[PhoneGap]](http://phonegap.com/) environment.
+DEVSimPy-mob is a hybrid application which can be integrated into an Apache Cordova project using [Eclipse](https://eclipse.org/), [Visual studio](https://www.visualstudio.com/fr-fr/features/cordova-vs.aspx) or [PhoneGap](http://phonegap.com/) environment.
 </p>
